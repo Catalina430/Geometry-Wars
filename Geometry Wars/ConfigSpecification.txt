@@ -1,0 +1,44 @@
+Window W H FL FS
+	int Width
+	int Height
+	int FrameLimit
+	int	FullScreen(1 yes || 0 no)
+Font F S R G B
+	-This line defines the font which is to be used to draw text 
+	for this program. The font of the line is as follows:
+	Font File			F				std::string (no spaces)
+	Font Size			S				int
+	RGB Color			(R, G, B)		int,int,int
+
+Player Specification:
+Player SR CR S FR FG FB OR OG OB OT V
+	Shape Radius			SR			int
+	Collision Radius		CR			int
+	Speed					S			float
+	Fill Color				FR,FG,FB	int,int,int
+	outline Color			OR,OG,OB	int,int,int
+	outline Thickness		OT			int
+	shape Vertices			V			int
+
+Enemy Specification:
+Enemy SR CR SMIN SMAX OR OG OB OT VMIN VMAX L SI
+	Shape Radius			SR			int
+	Collision Radius		CR			int
+	min / max Speed			SMIN,SMAX	float,float
+	outline Color			OR,OG,OB	int,int,int
+	outline Thickness		OT			int
+	min/max Vertices		VMIN,VMAX	int,int
+	small LifeSpan			L			int
+	Spawn Interval			SP			int
+
+Bullet Specification
+Bullet 15 15 20 255 0 0 255 255 255 4 9 180
+Bullet SR CR S FR FG FB OR OG OB OT V L
+	Shape Radius			SR			int
+	Collision Radius		CR			int
+	Speed					S			float
+	Fill Color				FR,FG,FB	int,int,int
+	outline Color			OR,OG,OB	int,int,int
+	outline Thickness		OT			int
+	shape Vertices			V			int
+	lifeSpan				L			int
