@@ -86,11 +86,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Image Include="art\background.jpg" />
-    <Image Include="Entity-Component.JPG" />
-    <Image Include="GeometyWars-Architecture.JPG" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="src\EntityManager.cpp" />
     <ClCompile Include="src\Entity.cpp" />
     <ClCompile Include="src\Game.cpp" />

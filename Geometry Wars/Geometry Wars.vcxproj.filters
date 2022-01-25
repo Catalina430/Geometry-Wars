@@ -15,17 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="GeometyWars-Architecture.JPG">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="Entity-Component.JPG">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="art\background.jpg">
-      <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="src\EntryPoint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
