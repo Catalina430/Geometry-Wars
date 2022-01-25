@@ -6,7 +6,7 @@
 
 struct PlayerConfig { int SR, CR, FR, FG, FB, OR, OG, OB, OT, V; float S; };
 struct EnemyConfig { int SR, CR, OR, OG, OB, OT, VMIN, VMAX, L, SI; float SMIN, SMAX; };
-struct BulletConfig { int SR, CR, FR, FG, FB, OR, OG, OB, OT, V, L; float S; };
+struct BulletConfig { int SR, CR, FR, FG, FB, OR, OG, OB, OT, V, L, SB; float S; };
 
 class Game
 {
@@ -36,7 +36,7 @@ private:
 	void sUserInput();								//Systems: User Input
 	void sLifeSpan();								//Systems: lifespan of the entities
 	void sRender();									//Systems: Render
-	void sEnemySpawner();							//Systems: Spawns enemies
+	void sSpawner();							//Systems: Spawns enemies
 	void sCollision();								//Systems: Collision detection
 
 	void spawnPlayer();

@@ -9,7 +9,6 @@
 #include "CLifeSpan.h"
 #include "CShape.h"
 
-//TODO: add entity tags instead of strings
 enum class entityTags 
 {
 	none,

@@ -6,7 +6,8 @@ public:
 	bool down{ false };
 	bool left{ false };
 	bool right{ false };
-	bool shoot{ false };
+	bool leftMouse{ false };
+	bool rightMouse{ false };
 	CInput() {}
 };
 

@@ -72,7 +72,18 @@ void Vec2::normalize()
 	y = y / L;
 }
 
+Vec2 Vec2::normalize(Vec2 vector)
+{
+	double L{ std::sqrt(vector.x * vector.x + vector.y * vector.y) };
+	return Vec2(vector.x / L, vector.x / L);
+}
+
 double Vec2::lenght()
 {
 	return std::sqrt(x * x + y * y);
+}
+
+std::ostream& operator<<(std::ostream& stream, const Vec2& lhs)
+{
+	return stream << lhs.x << " " << lhs.y << '\n';
 }

@@ -109,6 +109,7 @@
     <ClInclude Include="src\CCollision.h" />
     <ClInclude Include="src\Entity.h" />
     <ClInclude Include="src\Game.h" />
+    <ClInclude Include="src\Math.h" />
     <ClInclude Include="src\Vec2.h" />
   </ItemGroup>
   <ItemGroup>

@@ -42,3 +42,4 @@ Bullet SR CR S FR FG FB OR OG OB OT V L
 	outline Thickness		OT			int
 	shape Vertices			V			int
 	lifeSpan				L			int
+	Special Bullet Amount	SB			int

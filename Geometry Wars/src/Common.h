@@ -9,6 +9,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#include <cmath>
 
+
+#include "Math.h"
 #include "Vec2.h"

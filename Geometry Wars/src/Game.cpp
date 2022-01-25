@@ -12,12 +12,13 @@ void Game::init(const std::string& config)
 	//Read in config file here
 	//	use the premade PlayerConfig,Enemy Config, BulletConfig variables 
 
-	//Makes sure to change the rand seed so it doesnt spawn the same as the last gamess
+	//Makes sure to change the rand seed so it doesnt spawn the same as the last games
 	srand(time(nullptr));
 
-	m_backgroundTexture.loadFromFile("art/ezgif-2-76dec4f055.jpg");
-	m_backgroundSprite.setTexture(m_backgroundTexture);
-	m_backgroundSprite.setPosition(sf::Vector2f(0, 0));
+	//To be implemented if I need
+	//m_backgroundTexture.loadFromFile("art/ezgif-2-76dec4f055.jpg");
+	//m_backgroundSprite.setTexture(m_backgroundTexture);
+	//m_backgroundSprite.setPosition(sf::Vector2f(0, 0));
 
 	//Read in the config file 
 	std::fstream input{config};
@@ -203,6 +204,10 @@ void Game::init(const std::string& config)
 			int lifespan{};
 			input >> lifespan;
 			m_bulletConfig.L = lifespan;
+
+			int specialBulletAmount{};
+			input >> specialBulletAmount;
+			m_bulletConfig.SB = specialBulletAmount;
 		}
 	}
 
@@ -235,13 +240,6 @@ void Game::sMovement()
 	if (m_player->cInput->down)
 	{
 		playerVelocity.y += m_playerConfig.S;
-	}
-
-	if (m_player->cInput->shoot == true)
-	{
-		Vec2 mousePos{ static_cast<double>(sf::Mouse::getPosition(m_window).x), static_cast<double>(sf::Mouse::getPosition(m_window).y) };
-		spawnBullet(m_player, mousePos);
-		m_player->cInput->shoot = false;
 	}
 
 	for (auto e : m_entities.getEntities())
@@ -301,34 +299,22 @@ void Game::sUserInput()
 				else if (event.key.code == sf::Keyboard::D) { m_player->cInput->right = false; }
 				else if (event.key.code == sf::Keyboard::W) { m_player->cInput->up = false; }
 				else if (event.key.code == sf::Keyboard::S) { m_player->cInput->down = false; }
-
 				break;
 			}
 			case sf::Event::MouseButtonPressed:
 			{
 				if (event.mouseButton.button == sf::Mouse::Left)
 				{
-					if (m_player->cInput->shoot == false)
-						m_player->cInput->shoot = true;
-				}
-				//DEBUG
-				if (event.mouseButton.button == sf::Mouse::Right)
-				{
-					Vec2 mousePos = Vec2(sf::Mouse::getPosition(m_window).x,sf::Mouse::getPosition(m_window).y);
-					
-					for (auto e : m_entities.getEntities(entityTags::enemy))
+					if (m_player->cInput->leftMouse == false)
 					{
-						//std::cout << "Position is: " << e->cTransform->pos.x << " " << e->cTransform->pos.y << '\n';
-
-						Vec2 diff{ e->cTransform->pos.x - mousePos.x , e->cTransform->pos.y - mousePos.y };
-						
-						double collisionRadiusSQ{ (10 + e->cCollision->radius) * (10 + e->cCollision->radius) };
-						double distSQ{ (diff.x * diff.x) + (diff.y * diff.y) };
-
-						if (distSQ < collisionRadiusSQ)
-						{
-							std::cout << "Position is: " << e->cTransform->pos.x << " " << e->cTransform->pos.y << '\n';
-						}
+						m_player->cInput->leftMouse = true;
+					}
+				}
+				if(event.mouseButton.button == sf::Mouse::Right)
+				{
+					if (m_player->cInput->rightMouse == false)
+					{
+						m_player->cInput->rightMouse = true;
 					}
 				}
 				break;
@@ -337,8 +323,7 @@ void Game::sUserInput()
 			{
 				if (event.mouseButton.button == sf::Mouse::Left)
 				{
-					m_player->cInput->shoot = false;
-
+					m_player->cInput->leftMouse = false;
 				}
 				break;
 			}
@@ -382,7 +367,7 @@ void Game::sRender()
 {
 	m_window.clear();
 
-	m_window.draw(m_backgroundSprite);
+	//m_window.draw(m_backgroundSprite);
 
 	for (auto e : m_entities.getEntities())
 	{
@@ -394,14 +379,25 @@ void Game::sRender()
 	m_window.display();
 }
 
-void Game::sEnemySpawner()
+void Game::sSpawner()
 {
 	if ((m_currentFrame - m_lastEnemySpawnTime) >= m_enemyConfig.SI)
 	{
 		spawnEnemy();
-		//std::cout << "Enemy was spawned\n";
-		//std::cout << "Current frame: " << m_currentFrame << '\n';
 	}
+	//Players bullet
+	if (m_player->cInput->leftMouse == true)
+	{
+		Vec2 mousePos{ static_cast<double>(sf::Mouse::getPosition(m_window).x), static_cast<double>(sf::Mouse::getPosition(m_window).y) };
+		spawnBullet(m_player, mousePos);
+		m_player->cInput->leftMouse = false;
+	}
+	if (m_player->cInput->rightMouse == true)
+	{
+		spawnSpecialWeapon(m_player);
+		m_player->cInput->rightMouse = false;
+	}
+
 }
 
 void Game::sCollision()
@@ -423,6 +419,9 @@ void Game::sCollision()
 				//makes sure the player is alive and doesnt spawn 2 players
 				if (player->isActive())
 				{
+					m_score = 0;
+					m_scoreText.setString(std::to_string(m_score));
+
 					enemy->destroy();
 					player->destroy();
 					spawnPlayer();
@@ -445,6 +444,9 @@ void Game::sCollision()
 				//makes sure the player is alive so it doesnt spawn 2 players
 				if (player->isActive())
 				{
+					m_score /= 2;
+					m_scoreText.setString(std::to_string(m_score));
+
 					player->destroy();
 					enemy->destroy();
 					spawnPlayer();
@@ -636,53 +638,75 @@ void Game::spawnEnemy()
 
 void Game::spawnSmallEnemies(std::shared_ptr<Entity> parent)
 {
-	//	- spawn a number of small enemies equal to the number of vertices of the original
-	//	- set each enemy to the same color as the original, half the size
-	//	- small enemies are worth double points of the original enemy
 
+	//Spawn a number of small enemies equal to the number of vertices of the original
 	size_t vertices{ parent->cShape->circle.getPointCount() };
 
-	Vec2 parentPos{ parent->cTransform->pos.x ,parent->cTransform->pos.y };
+	Vec2 ParentPos{ parent->cTransform->pos.x ,parent->cTransform->pos.y };
+	Vec2 normalizedParentPos{ Vec2::normalize(ParentPos) };
 
+	//Set each enemy to the same color as the original, half the size
 	sf::Color parentFill{ parent->cShape->circle.getFillColor() };
-	sf::Color parentOutline;
+	sf::Color parentOutline{ parent->cShape->circle.getOutlineColor() };
 	float parentTickness{ parent->cShape->circle.getOutlineThickness() };
 
 	float smallEnemyRadius{ parent->cShape->circle.getRadius() * 0.5f };
 	float smallEnemyCollisionRadius{ parent->cCollision->radius * 0.5f };
 
+	float angle{ 0 };
+
+	std::cout << ParentPos;
+	std::cout << normalizedParentPos;
+
 	for (size_t i{ 0 }; i < vertices; ++i)
 	{
 		auto e = m_entities.addEntity(entityTags::smallEnemy);
+
+		//Small enemies are worth double points of the original enemy
 		e->cScore = std::make_shared<CScore>(parent->cScore->score * 2);
+
 		e->cShape = std::make_shared<CShape>(smallEnemyRadius, vertices, parentFill, parentOutline, parentTickness);
+
 		e->cCollision = std::make_shared<CCollision>(smallEnemyCollisionRadius);
+
 		e->cLifespan = std::make_shared<CLifeSpan>(m_enemyConfig.L);
 
-		//TODO: add the correct velocity for each small enemies
-		e->cTransform = std::make_shared<CTransform>(parentPos, Vec2(0, 0), 0);
+		//Calculate the velocity
 
-		float lenght{ sqrtf(parent->cShape->circle.getRadius() * parent->cShape->circle.getRadius() + parent->cShape->circle.getRadius() * parent->cShape->circle.getRadius()) };
+		double radians{ angle * Math::PI / 180.0 };
 
-		float cos{ parent->cShape->circle.getRadius() / lenght};
+		Vec2 velocity
+		{
+			std::cos(radians) * normalizedParentPos.x + std::sin(radians) * normalizedParentPos.y,
+			std::sin(radians) * normalizedParentPos.x - std::cos(radians) * normalizedParentPos.y,
+		};
 
-		float x{ lenght * cos };
-		float y{ lenght * cos };
+		//Get the lenght of the vector 
+		float L{ sqrtf(velocity.x * velocity.x + velocity.y * velocity.y) };
 
+		//Normalize the vector to get an unit vector
+		Vec2 normalizedVelocity{ velocity.x / L,velocity.y / L };
+		
+		//Scales the normalized vertor by the parents velocity
+		Vec2 newVelocity{ normalizedVelocity.x * parent->cTransform->velocity.x, normalizedVelocity.y * parent->cTransform->velocity.y };
+		
+		e->cTransform = std::make_shared<CTransform>(ParentPos, newVelocity, 0);
 
+		angle += 360 / vertices;
 	}
+
 }
 
 //Spawns a bullet from a given entity to a target location
 void Game::spawnBullet(std::shared_ptr<Entity> shooter, const Vec2& mousePos)
 {
-	auto bullet = m_entities.addEntity(entityTags::bullet);
+	auto e = m_entities.addEntity(entityTags::bullet);
 
-	bullet->cCollision = std::make_shared<CCollision>(m_bulletConfig.CR);
+	e->cCollision = std::make_shared<CCollision>(m_bulletConfig.CR);
 
-	bullet->cLifespan = std::make_shared<CLifeSpan>(m_bulletConfig.L);
+	e->cLifespan = std::make_shared<CLifeSpan>(m_bulletConfig.L);
 
-	bullet->cShape = std::make_shared<CShape>(m_bulletConfig.SR, m_bulletConfig.V,
+	e->cShape = std::make_shared<CShape>(m_bulletConfig.SR, m_bulletConfig.V,
 		sf::Color(m_bulletConfig.FR, m_bulletConfig.FG, m_bulletConfig.FB), 
 		sf::Color(m_bulletConfig.OR, m_bulletConfig.OG,
 		m_bulletConfig.OB), m_bulletConfig.OT);
@@ -694,11 +718,52 @@ void Game::spawnBullet(std::shared_ptr<Entity> shooter, const Vec2& mousePos)
 
 	Vec2 velocity{m_bulletConfig.S * difference.x, m_bulletConfig.S * difference.y};
 
-	bullet->cTransform = std::make_shared<CTransform>(shooter->cTransform->pos, velocity, 0);
+	e->cTransform = std::make_shared<CTransform>(shooter->cTransform->pos, velocity, 0);
 }
 
 void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity)
 {
+	
+	float angle{ 0 };
+
+	for (int i{ 0 }; i < m_bulletConfig.SB; ++i)
+	{
+		auto e = m_entities.addEntity(entityTags::bullet);
+
+		e->cShape = std::make_shared<CShape>(m_bulletConfig.SR, m_bulletConfig.V,
+			sf::Color(m_bulletConfig.FR, m_bulletConfig.FG, m_bulletConfig.FB),
+			sf::Color(m_bulletConfig.OR, m_bulletConfig.OG, m_bulletConfig.OB), m_bulletConfig.OT);
+
+		e->cCollision = std::make_shared<CCollision>(m_bulletConfig.CR);
+
+		e->cLifespan = std::make_shared<CLifeSpan>(m_bulletConfig.L);
+
+
+		Vec2 normalizedPos{ Vec2::normalize(m_player->cTransform->pos) };
+
+		//Calculate the velocity
+
+		double radians{ angle * Math::PI / 180.0 };
+
+		Vec2 velocity
+		{
+			std::cos(radians) * normalizedPos.x + std::sin(radians) * normalizedPos.y,
+			std::sin(radians) * normalizedPos.x - std::cos(radians) * normalizedPos.y,
+		};
+
+		//Get the lenght of the vector 
+		double L{ velocity.lenght() };
+
+		//Normalize the vector to get an unit vector
+		Vec2 normalizedVelocity{ velocity.x / L,velocity.y / L };
+
+		//Scales the normalized vertor by the parents velocity
+		Vec2 newVelocity{ normalizedVelocity.x * m_bulletConfig.S, normalizedVelocity.y * m_bulletConfig.S };
+
+		e->cTransform = std::make_shared<CTransform>(m_player->cTransform->pos, newVelocity, 0);
+
+		angle += 360 / m_bulletConfig.SB;
+	}
 }
 
 void Game::run()
@@ -710,7 +775,7 @@ void Game::run()
 		if (!m_paused)
 		{
 			sLifeSpan();
-			sEnemySpawner();
+			sSpawner();
 			sMovement();
 			sCollision();
 		}
