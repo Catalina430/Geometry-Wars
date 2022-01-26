@@ -7,13 +7,31 @@ Game::Game(const std::string& configFile)
 	init(configFile);
 }
 
+void Game::run()
+{
+	while (m_running)
+	{
+		m_entities.update();
+
+		if (!m_paused)
+		{
+			sLifeSpan();
+			sSpawner();
+			sMovement();
+			sCollision();
+		}
+		sUserInput();
+		sRender();
+
+		//Increment the current frame
+		++m_currentFrame;
+	}
+}
+
 void Game::init(const std::string& config)
 {
-	//Read in config file here
-	//	use the premade PlayerConfig,Enemy Config, BulletConfig variables 
-
 	//Makes sure to change the rand seed so it doesnt spawn the same as the last games
-	srand(time(nullptr));
+	srand(time(0));
 
 	//To be implemented if I need
 	//m_backgroundTexture.loadFromFile("art/ezgif-2-76dec4f055.jpg");
@@ -73,7 +91,7 @@ void Game::init(const std::string& config)
 			input >> fontSize;
 			m_scoreText.setCharacterSize(fontSize);
 
-			sf::Vector3i RGB{};
+			sf::Vector3<sf::Uint16> RGB{};
 			input >> RGB.x;
 			input >> RGB.y;
 			input >> RGB.z;
@@ -93,7 +111,7 @@ void Game::init(const std::string& config)
 			input >> speed;
 			m_playerConfig.S = speed;
 
-			sf::Vector3i fillColor{};
+			sf::Vector3<sf::Uint16> fillColor{};
 			input >> fillColor.x;
 			input >> fillColor.y;
 			input >> fillColor.z;
@@ -101,7 +119,7 @@ void Game::init(const std::string& config)
 			m_playerConfig.FG = fillColor.y;
 			m_playerConfig.FB = fillColor.z;
 
-			sf::Vector3i outlineColor{};
+			sf::Vector3<sf::Uint16> outlineColor{};
 			input >> outlineColor.x;
 			input >> outlineColor.y;
 			input >> outlineColor.z;
@@ -135,7 +153,7 @@ void Game::init(const std::string& config)
 			input >> maxSpeed;
 			m_enemyConfig.SMAX = maxSpeed;
 
-			sf::Vector3i outlineColor{};
+			sf::Vector3<sf::Uint16> outlineColor{};
 			input >> outlineColor.x;
 			input >> outlineColor.y;
 			input >> outlineColor.z;
@@ -177,7 +195,7 @@ void Game::init(const std::string& config)
 			input >> speed;
 			m_bulletConfig.S = speed;
 
-			sf::Vector3i fillColor{};
+			sf::Vector3<sf::Uint16> fillColor{};
 			input >> fillColor.x;
 			input >> fillColor.y;
 			input >> fillColor.z;
@@ -185,7 +203,7 @@ void Game::init(const std::string& config)
 			m_bulletConfig.FG = fillColor.y;
 			m_bulletConfig.FB = fillColor.z;
 
-			sf::Vector3i outlineColor{};
+			sf::Vector3<sf::Uint16> outlineColor{};
 			input >> outlineColor.x;
 			input >> outlineColor.y;
 			input >> outlineColor.z;
@@ -249,15 +267,15 @@ void Game::sMovement()
 			//Updates the position of the player
 			m_player->cTransform->pos += playerVelocity;
 			//Rotates the player
-			e->cTransform->angle += 1.0f;
+			e->cTransform->angle += 2.0f;
 			e->cShape->circle.setRotation(e->cTransform->angle);
 		}
-		if (e->cTransform)
+		else if (e->cTransform)
 		{
 			//Updates the position of the entities
 			e->cTransform->pos += e->cTransform->velocity;
-			//Rotates the player
-			e->cTransform->angle += 1.0f;
+			//Rotates the entity
+			e->cTransform->angle += 2.0f;
 			e->cShape->circle.setRotation(e->cTransform->angle);
 		}
 	}
@@ -381,6 +399,7 @@ void Game::sRender()
 
 void Game::sSpawner()
 {
+	//Enemy Spawner
 	if ((m_currentFrame - m_lastEnemySpawnTime) >= m_enemyConfig.SI)
 	{
 		spawnEnemy();
@@ -392,6 +411,7 @@ void Game::sSpawner()
 		spawnBullet(m_player, mousePos);
 		m_player->cInput->leftMouse = false;
 	}
+	//Special player bullet
 	if (m_player->cInput->rightMouse == true)
 	{
 		spawnSpecialWeapon(m_player);
@@ -558,9 +578,9 @@ void Game::spawnPlayer()
 	//This returns a std::shared_ptr<Entity>
 	auto playerEntity = m_entities.addEntity(entityTags::player);
 
-	Vec2 middleWindow{ m_window.getSize().x * 0.5, m_window.getSize().y * 0.5 };
+	Vec2 middleWindowPos{ m_window.getSize().x * 0.5, m_window.getSize().y * 0.5 };
 	
-	playerEntity->cTransform = std::make_shared<CTransform>(middleWindow, Vec2(0, 0), 0.0f);
+	playerEntity->cTransform = std::make_shared<CTransform>(middleWindowPos, Vec2(0, 0), 0.0f);
 
 	//Creates the entities shape
 	playerEntity->cShape = std::make_shared<CShape>(m_playerConfig.SR, m_playerConfig.V,sf::Color(m_playerConfig.FR, m_playerConfig.FG,
@@ -723,10 +743,9 @@ void Game::spawnBullet(std::shared_ptr<Entity> shooter, const Vec2& mousePos)
 
 void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity)
 {
-	
 	float angle{ 0 };
 
-	for (int i{ 0 }; i < m_bulletConfig.SB; ++i)
+	for (int j{ 0 }; j < m_bulletConfig.SB; ++j)
 	{
 		auto e = m_entities.addEntity(entityTags::bullet);
 
@@ -763,26 +782,5 @@ void Game::spawnSpecialWeapon(std::shared_ptr<Entity> entity)
 		e->cTransform = std::make_shared<CTransform>(m_player->cTransform->pos, newVelocity, 0);
 
 		angle += 360 / m_bulletConfig.SB;
-	}
-}
-
-void Game::run()
-{
-	while (m_running)
-	{
-		m_entities.update();
-
-		if (!m_paused)
-		{
-			sLifeSpan();
-			sSpawner();
-			sMovement();
-			sCollision();
-		}
-		sUserInput();
-		sRender();
-
-		//Increment the current frame
-		++m_currentFrame;
 	}
 }

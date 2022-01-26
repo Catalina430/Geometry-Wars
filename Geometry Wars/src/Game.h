@@ -24,8 +24,8 @@ private:
 	bool				m_paused{ false };				//If game logic is updated
 	bool				m_running{ true };				//If the game is running
 
-	sf::Texture			m_backgroundTexture;
-	sf::Sprite			m_backgroundSprite;
+	//sf::Texture			m_backgroundTexture;
+	//sf::Sprite			m_backgroundSprite;
 
 	std::shared_ptr<Entity> m_player;
 
